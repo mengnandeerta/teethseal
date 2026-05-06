@@ -22,6 +22,7 @@ python -m q2d_labyrinth.cli examples/sco2_5teeth.json --out outputs/sco2_5teeth
 - `teeth.csv`：逐齿结果
 - `report.md`：简要工程报告
 - `geometry_pressure.png`：梳齿几何剖面和对应压力标注
+- `geometry.csv`：最终用于计算的逐齿几何参数，自适应几何会写在这里
 
 ## 输入文件
 
@@ -43,6 +44,41 @@ python -m q2d_labyrinth.cli examples/sco2_5teeth.json --out outputs/sco2_5teeth
 ```
 
 程序会调用 CoolProp 查询 `p-T`、`p-h`、`p-s` 状态下的密度、焓、熵、黏度和声速。齿顶节流采用等熵焓降搜索质量通量峰值来判断临界流，比固定 `gamma` 的理想气体公式更适合超临界 CO2。
+
+## 自适应逐齿几何
+
+v2 支持让每个齿使用不同的 `clearance`、`cavity_length` 等几何参数。输入文件可以直接写：
+
+```json
+"geometry": {
+  "tooth_count": 2,
+  "diameter": 0.08,
+  "clearance": 0.00015,
+  "tooth_width": 0.001,
+  "tooth_height": 0.0015,
+  "cavity_length": 0.003,
+  "cavity_height": 0.0015,
+  "teeth": [
+    {"clearance": 0.00015, "tooth_width": 0.001, "tooth_height": 0.0015, "cavity_length": 0.003, "cavity_height": 0.0015},
+    {"clearance": 0.00012, "tooth_width": 0.001, "tooth_height": 0.0015, "cavity_length": 0.004, "cavity_height": 0.0015}
+  ]
+}
+```
+
+也可以开启自动生成：
+
+```json
+"adaptive_geometry": {
+  "enabled": true,
+  "iterations": 1,
+  "min_clearance": 0.00010,
+  "max_clearance": 0.00016,
+  "min_cavity_length": 0.0025,
+  "max_cavity_length": 0.0048
+}
+```
+
+自动生成器会先用基准几何计算一次沿程状态，然后按局部密度下降和两相风险逐步收紧下游间隙、加长下游腔室。示例见 [examples/design_d80_sco2_80c_adaptive.json](examples/design_d80_sco2_80c_adaptive.json)。
 
 ## 适用边界
 

@@ -4,6 +4,7 @@ import argparse
 from pathlib import Path
 
 from .case import load_case
+from .adaptive import build_adaptive_geometry
 from .solver import solve_case, write_outputs
 
 
@@ -14,6 +15,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     case = load_case(Path(args.case))
+    case = build_adaptive_geometry(case)
     result = solve_case(case)
     write_outputs(result, args.out, case)
 

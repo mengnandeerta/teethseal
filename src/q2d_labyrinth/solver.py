@@ -23,6 +23,11 @@ class ToothResult:
     dp_fraction: float
     mach: float
     reynolds: float
+    clearance: float
+    tooth_width: float
+    tooth_height: float
+    cavity_length: float
+    cavity_height: float
     Cd: float
     K_expansion: float
     K_contraction: float
@@ -61,19 +66,20 @@ def _march(case: CaseConfig, mass_flow: float) -> SolveResult:
     nondim = DimensionlessGeometry.from_geometry(g)
 
     for idx in range(1, g.tooth_count + 1):
+        tg = g.tooth(idx)
         p_up = state.p
         T_up = state.T
         h_up = state.h
         p_throat, is_choked = fluid.downstream_pressure_for_mass_flow(
             state_up=state,
             mass_flow=mass_flow,
-            area=g.flow_area,
+            area=tg.flow_area(g.diameter),
             cd=c.Cd_tooth,
         )
         h_throat = fluid.isentropic_h(p_throat, state)
         throat_state = fluid.state_ph(p_throat, h_throat)
         rho_throat = throat_state.rho
-        v_tooth = _velocity(mass_flow, rho_throat, g.flow_area)
+        v_tooth = _velocity(mass_flow, rho_throat, tg.flow_area(g.diameter))
         mach = v_tooth / throat_state.a if math.isfinite(throat_state.a) and throat_state.a > 0.0 else math.nan
         reynolds = rho_throat * v_tooth * max(2.0 * g.clearance, 1.0e-30) / max(throat_state.mu, 1.0e-30)
 
@@ -102,6 +108,11 @@ def _march(case: CaseConfig, mass_flow: float) -> SolveResult:
                 dp_fraction=dp / max(case.boundary.inlet_pressure - case.boundary.outlet_pressure, 1.0e-30),
                 mach=mach,
                 reynolds=reynolds,
+                clearance=tg.clearance,
+                tooth_width=tg.tooth_width,
+                tooth_height=tg.tooth_height,
+                cavity_length=tg.cavity_length,
+                cavity_height=tg.cavity_height,
                 Cd=c.Cd_tooth,
                 K_expansion=c.K_expansion,
                 K_contraction=c.K_contraction,
@@ -138,7 +149,7 @@ def solve_case(case: CaseConfig) -> SolveResult:
     inlet_state = case.fluid.state_pT(inlet, case.boundary.inlet_temperature)
     first_choked, _ = case.fluid.max_orifice_mass_flow(
         state_up=inlet_state,
-        area=case.geometry.flow_area,
+        area=case.geometry.tooth(1).flow_area(case.geometry.diameter),
         cd=case.coefficients.Cd_tooth,
     )
     lo = 0.0
@@ -221,5 +232,29 @@ def write_outputs(result: SolveResult, out_dir: str | Path, case: CaseConfig | N
 
         png_path = out / "geometry_pressure.png"
         write_geometry_pressure_png(case, result, png_path)
-        lines.extend(["", "## Postprocess", "", "- `geometry_pressure.png`: geometry section with pressure labels."])
+        with (out / "geometry.csv").open("w", encoding="utf-8", newline="") as stream:
+            fieldnames = ["tooth", "clearance", "tooth_width", "tooth_height", "cavity_length", "cavity_height"]
+            writer = csv.DictWriter(stream, fieldnames=fieldnames)
+            writer.writeheader()
+            for idx in range(1, case.geometry.tooth_count + 1):
+                tg = case.geometry.tooth(idx)
+                writer.writerow(
+                    {
+                        "tooth": idx,
+                        "clearance": tg.clearance,
+                        "tooth_width": tg.tooth_width,
+                        "tooth_height": tg.tooth_height,
+                        "cavity_length": tg.cavity_length,
+                        "cavity_height": tg.cavity_height,
+                    }
+                )
+        lines.extend(
+            [
+                "",
+                "## Postprocess",
+                "",
+                "- `geometry_pressure.png`: geometry section with pressure labels.",
+                "- `geometry.csv`: per-tooth geometry used by the solver.",
+            ]
+        )
     (out / "report.md").write_text("\n".join(lines) + "\n", encoding="utf-8")

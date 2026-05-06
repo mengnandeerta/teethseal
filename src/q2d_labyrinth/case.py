@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import json
 from pathlib import Path
 from typing import Any
 
 from .fluid import CoolPropFluid, IdealGas
-from .models import Boundary, Coefficients, SealGeometry, SolverOptions
+from .models import AdaptiveGeometryOptions, Boundary, Coefficients, SealGeometry, SolverOptions, ToothGeometry
 
 
 @dataclass(frozen=True)
@@ -17,6 +17,7 @@ class CaseConfig:
     boundary: Boundary
     coefficients: Coefficients
     solver: SolverOptions
+    adaptive_geometry: AdaptiveGeometryOptions = field(default_factory=AdaptiveGeometryOptions)
 
 
 def _require_mapping(data: Any, name: str) -> dict[str, Any]:
@@ -33,10 +34,18 @@ def load_case(path: str | Path) -> CaseConfig:
 
     fluid_data = _require_mapping(data.get("fluid", {}), "fluid")
     case_data = _require_mapping(data.get("case", {}), "case")
-    geometry = SealGeometry(**_require_mapping(data["geometry"], "geometry"))
+    geometry_data = dict(_require_mapping(data["geometry"], "geometry"))
+    tooth_data = geometry_data.pop("teeth", None)
+    teeth = None
+    if tooth_data is not None:
+        if not isinstance(tooth_data, list):
+            raise ValueError("geometry.teeth must be a list")
+        teeth = tuple(ToothGeometry(**_require_mapping(item, "geometry.teeth[]")) for item in tooth_data)
+    geometry = SealGeometry(**geometry_data, teeth=teeth)
     boundary = Boundary(**_require_mapping(data["boundary"], "boundary"))
     coefficients = Coefficients(**_require_mapping(data.get("coefficients", {}), "coefficients"))
     solver = SolverOptions(**_require_mapping(data.get("solver", {}), "solver"))
+    adaptive_geometry = AdaptiveGeometryOptions(**_require_mapping(data.get("adaptive_geometry", {}), "adaptive_geometry"))
     fluid_type = fluid_data.get("type", "ideal_gas")
     fluid_kwargs = {k: v for k, v in fluid_data.items() if k != "type"}
     if fluid_type == "ideal_gas":
@@ -57,4 +66,5 @@ def load_case(path: str | Path) -> CaseConfig:
         boundary=boundary,
         coefficients=coefficients,
         solver=solver,
+        adaptive_geometry=adaptive_geometry,
     )

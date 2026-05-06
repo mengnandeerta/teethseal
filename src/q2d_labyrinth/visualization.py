@@ -132,25 +132,28 @@ def write_geometry_pressure_png(case: CaseConfig, result: SolveResult, path: str
 
     x = geometry.inlet_length
     for idx, tooth in enumerate(result.teeth, start=1):
+        tooth_geometry = geometry.tooth(idx)
         tooth_x = sx(x)
-        tooth_w = max(18.0, geometry.tooth_width * scale_x)
+        tooth_w = max(18.0, tooth_geometry.tooth_width * scale_x)
+        local_tooth_h = max(95.0, min(tooth_h, tooth_geometry.tooth_height / max(geometry.tooth_height, 1.0e-12) * tooth_h))
+        local_root_y = tooth_tip_y - local_tooth_h
         color = _pressure_color(tooth.p_up, min_p, max_p)
         draw.rectangle(
-            (tooth_x, tooth_root_y, tooth_x + tooth_w, tooth_tip_y),
+            (tooth_x, local_root_y, tooth_x + tooth_w, tooth_tip_y),
             fill=color,
             outline=(51, 78, 104),
             width=2,
         )
-        _center_text(draw, (tooth_x + tooth_w / 2, tooth_root_y - 22), f"Tooth {idx}", label_font)
-        _center_text(draw, (tooth_x + tooth_w / 2, tooth_root_y + 48), "p up", small_font)
-        _center_text(draw, (tooth_x + tooth_w / 2, tooth_root_y + 70), _fmt_pressure(tooth.p_up), small_font)
-        _center_text(draw, (tooth_x + tooth_w / 2, tooth_root_y + 108), "p down", small_font)
-        _center_text(draw, (tooth_x + tooth_w / 2, tooth_root_y + 130), _fmt_pressure(tooth.p_down), small_font)
+        _center_text(draw, (tooth_x + tooth_w / 2, local_root_y - 22), f"Tooth {idx}", label_font)
+        _center_text(draw, (tooth_x + tooth_w / 2, local_root_y + 40), "p up", small_font)
+        _center_text(draw, (tooth_x + tooth_w / 2, local_root_y + 62), _fmt_pressure(tooth.p_up), small_font)
+        _center_text(draw, (tooth_x + tooth_w / 2, local_root_y + 96), f"c={tooth_geometry.clearance * 1e3:.3f} mm", small_font)
+        _center_text(draw, (tooth_x + tooth_w / 2, local_root_y + 120), _fmt_pressure(tooth.p_down), small_font)
 
-        x += geometry.tooth_width
+        x += tooth_geometry.tooth_width
         if idx < geometry.tooth_count:
             cav_x = sx(x)
-            cav_w = max(20.0, geometry.cavity_length * scale_x)
+            cav_w = max(20.0, tooth_geometry.cavity_length * scale_x)
             draw.rectangle(
                 (cav_x, tooth_tip_y, cav_x + cav_w, axis_y - shaft_h),
                 fill=(215, 239, 255),
@@ -158,8 +161,8 @@ def write_geometry_pressure_png(case: CaseConfig, result: SolveResult, path: str
                 width=1,
             )
             _center_text(draw, (cav_x + cav_w / 2, tooth_tip_y + 58), f"cavity {idx}", small_font)
-            _center_text(draw, (cav_x + cav_w / 2, tooth_tip_y + 82), _fmt_pressure(tooth.p_down), small_font)
-            x += geometry.cavity_length
+            _center_text(draw, (cav_x + cav_w / 2, tooth_tip_y + 82), f"Lc={tooth_geometry.cavity_length * 1e3:.2f} mm", small_font)
+            x += tooth_geometry.cavity_length
 
     outlet_text = f"Outlet {_fmt_pressure(result.outlet_pressure_calculated)}"
     outlet_bbox = draw.textbbox((0, 0), outlet_text, font=label_font)
