@@ -1,0 +1,13 @@
+[project]
+name = "q2d-labyrinth-sco2"
+version = "0.2.0"
+description = "Quasi-2D engineering solver for labyrinth seal leakage estimation with CoolProp real-gas support."
+requires-python = ">=3.10"
+dependencies = ["CoolProp>=6", "Pillow>=9"]
+
+[project.scripts]
+q2d-labyrinth = "q2d_labyrinth.cli:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

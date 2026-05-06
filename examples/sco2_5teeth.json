@@ -1,0 +1,44 @@
+{
+  "case": {
+    "name": "sco2_5teeth_real_gas"
+  },
+  "fluid": {
+    "type": "coolprop",
+    "name": "CO2",
+    "backend": "HEOS",
+    "min_pressure": 1000000.0,
+    "throat_samples": 100
+  },
+  "geometry": {
+    "tooth_count": 5,
+    "diameter": 0.05,
+    "clearance": 0.0002,
+    "tooth_width": 0.001,
+    "tooth_height": 0.001,
+    "cavity_length": 0.002,
+    "cavity_height": 0.001,
+    "inlet_length": 0.0,
+    "outlet_length": 0.0
+  },
+  "boundary": {
+    "inlet_pressure": 12000000.0,
+    "inlet_temperature": 330.0,
+    "outlet_pressure": 8000000.0
+  },
+  "coefficients": {
+    "Cd_tooth": 0.72,
+    "K_expansion": 0.5,
+    "K_contraction": 0.3,
+    "theta_carryover": 0.35,
+    "eta_recovery": 0.2
+  },
+  "solver": {
+    "tolerance_pressure": 1.0e-5,
+    "max_iterations": 100
+  },
+  "output": {
+    "csv": true,
+    "markdown_report": true,
+    "geometry_pressure_png": true
+  }
+}

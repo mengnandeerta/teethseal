@@ -1,0 +1,44 @@
+{
+  "case": {
+    "name": "air_5teeth_fast_design"
+  },
+  "fluid": {
+    "type": "ideal_gas",
+    "name": "air",
+    "gas_constant": 287.05,
+    "gamma": 1.4,
+    "cp": 1005.0,
+    "viscosity": 1.8e-5
+  },
+  "geometry": {
+    "tooth_count": 5,
+    "diameter": 0.05,
+    "clearance": 0.0002,
+    "tooth_width": 0.001,
+    "tooth_height": 0.001,
+    "cavity_length": 0.002,
+    "cavity_height": 0.001,
+    "inlet_length": 0.0,
+    "outlet_length": 0.0
+  },
+  "boundary": {
+    "inlet_pressure": 1000000.0,
+    "inlet_temperature": 300.0,
+    "outlet_pressure": 500000.0
+  },
+  "coefficients": {
+    "Cd_tooth": 0.72,
+    "K_expansion": 0.5,
+    "K_contraction": 0.3,
+    "theta_carryover": 0.35,
+    "eta_recovery": 0.2
+  },
+  "solver": {
+    "tolerance_pressure": 1.0e-5,
+    "max_iterations": 100
+  },
+  "output": {
+    "csv": true,
+    "markdown_report": true
+  }
+}
