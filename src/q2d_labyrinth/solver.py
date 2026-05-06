@@ -87,7 +87,7 @@ def _march(case: CaseConfig, mass_flow: float) -> SolveResult:
         h_down = max(h_up + carryover_ke, 1.0)
         state = fluid.state_ph(static_after_cavity, h_down)
 
-        choking_margin = (p_throat - fluid.critical_pressure_for_state(state)) / max(p_up, 1.0e-30)
+        choking_margin = 0.0 if is_choked else (p_throat - state.p * 0.02) / max(p_up, 1.0e-30)
         dp = p_up - state.p
         teeth.append(
             ToothResult(
@@ -142,11 +142,27 @@ def solve_case(case: CaseConfig) -> SolveResult:
         cd=case.coefficients.Cd_tooth,
     )
     lo = 0.0
-    hi = first_choked * 1.2
-    best = _march(case, 0.5 * hi)
+    hi = max(first_choked * 1.0e-4, 1.0e-9)
+    best = _march(case, lo)
+    for _ in range(40):
+        try:
+            trial_result = _march(case, hi)
+        except ValueError:
+            break
+        best = trial_result
+        if trial_result.outlet_pressure_calculated <= outlet:
+            break
+        lo = hi
+        hi *= 2.0
+    else:
+        raise RuntimeError("Could not bracket the target outlet pressure.")
     for iteration in range(1, case.solver.max_iterations + 1):
         trial = 0.5 * (lo + hi)
-        result = _march(case, trial)
+        try:
+            result = _march(case, trial)
+        except ValueError:
+            hi = trial
+            continue
         best = result
         error = (result.outlet_pressure_calculated - outlet) / outlet
         if abs(error) < case.solver.tolerance_pressure:

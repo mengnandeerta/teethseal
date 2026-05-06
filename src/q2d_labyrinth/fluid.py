@@ -56,12 +56,14 @@ class IdealGas:
         return mass_flow, pcrit
 
     def downstream_pressure_for_mass_flow(self, state_up: FlowState, mass_flow: float, area: float, cd: float) -> tuple[float, bool]:
+        if mass_flow <= 0.0:
+            return state_up.p, False
         choked_flow, pcrit = self.max_orifice_mass_flow(state_up, area, cd)
         if mass_flow >= choked_flow:
             return pcrit, True
         lo = pcrit
         hi = state_up.p
-        for _ in range(80):
+        for _ in range(50):
             mid = 0.5 * (lo + hi)
             mdot_mid, _ = self.orifice_mass_flow(state_up.p, state_up.T, mid, area, cd)
             if mdot_mid > mass_flow:
@@ -150,12 +152,14 @@ class CoolPropFluid:
         return pcrit
 
     def downstream_pressure_for_mass_flow(self, state_up: FlowState, mass_flow: float, area: float, cd: float) -> tuple[float, bool]:
+        if mass_flow <= 0.0:
+            return state_up.p, False
         choked_flow, pcrit = self.max_orifice_mass_flow(state_up, area, cd)
         if mass_flow >= choked_flow:
             return pcrit, True
         lo = pcrit
         hi = state_up.p
-        for _ in range(80):
+        for _ in range(28):
             mid = 0.5 * (lo + hi)
             mdot_mid = self._mass_flow_at_pressure(state_up, mid, area, cd)
             if mdot_mid > mass_flow:
