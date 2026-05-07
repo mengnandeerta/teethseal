@@ -1,0 +1,55 @@
+{
+  "case": {
+    "name": "design_d80_sco2_80c_13p5_to_3mpa_adaptive"
+  },
+  "fluid": {
+    "type": "coolprop",
+    "name": "CO2",
+    "backend": "HEOS",
+    "min_pressure": 100000.0,
+    "throat_samples": 5
+  },
+  "geometry": {
+    "tooth_count": 14,
+    "diameter": 0.08,
+    "clearance": 0.00015,
+    "tooth_width": 0.001,
+    "tooth_height": 0.0015,
+    "cavity_length": 0.003,
+    "cavity_height": 0.0015,
+    "inlet_length": 0.0,
+    "outlet_length": 0.0
+  },
+  "adaptive_geometry": {
+    "enabled": true,
+    "iterations": 1,
+    "min_clearance": 0.00010,
+    "max_clearance": 0.00016,
+    "min_cavity_length": 0.0025,
+    "max_cavity_length": 0.0048,
+    "density_exponent": 0.35,
+    "cavity_exponent": 0.25,
+    "two_phase_clearance_factor": 0.85
+  },
+  "boundary": {
+    "inlet_pressure": 13500000.0,
+    "inlet_temperature": 353.15,
+    "outlet_pressure": 3000000.0
+  },
+  "coefficients": {
+    "Cd_tooth": 0.72,
+    "K_expansion": 0.5,
+    "K_contraction": 0.3,
+    "theta_carryover": 0.35,
+    "eta_recovery": 0.2
+  },
+  "solver": {
+    "tolerance_pressure": 1.0e-2,
+    "max_iterations": 14
+  },
+  "output": {
+    "csv": true,
+    "markdown_report": true,
+    "geometry_pressure_png": true
+  }
+}
